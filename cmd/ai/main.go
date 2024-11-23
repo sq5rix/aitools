@@ -9,15 +9,17 @@ import (
 
     "github.com/sq5rix/aitools/internal/ai/client"
     "github.com/sq5rix/aitools/internal/ai/help"
+    "github.com/sq5rix/aitools/internal/ai/models"
 )
 
 func main() {
     var (
         systemPrompt = flag.String("system", "", "System prompt")
         imageFile    = flag.String("image", "", "Path to image file")
-        modelName    = flag.String("model", "llama2", "Model name to use")
+        modelName    = flag.String("model", "", "Model name to use")
         showHelp     = flag.Bool("help", false, "Show help")
         listModels   = flag.Bool("list", false, "List available models")
+        debug        = flag.Bool("debug", false, "Enable debug output")
     )
     flag.Parse()
 
@@ -44,7 +46,11 @@ func main() {
     // Read user input from stdin
     reader := bufio.NewReader(os.Stdin)
     fmt.Print("Enter your prompt: ")
-    userPrompt, _ := reader.ReadString('\n')
+    userPrompt, err := reader.ReadString('\n')
+    if err != nil {
+        fmt.Printf("Error reading prompt: %v\n", err)
+        os.Exit(1)
+    }
     userPrompt = strings.TrimSpace(userPrompt)
 
     if userPrompt == "" {
@@ -52,20 +58,44 @@ func main() {
         return
     }
 
+    // Select appropriate model based on input
+    selectedModel := *modelName
+    if selectedModel == "" {
+        if *imageFile != "" {
+            selectedModel = models.DefaultVisionModel
+        } else {
+            selectedModel = models.DefaultTextModel
+        }
+    }
+
+    if *debug {
+        fmt.Printf("Debug: Using model: %s\n", selectedModel)
+        fmt.Printf("Debug: User prompt: %s\n", userPrompt)
+        fmt.Printf("Debug: System prompt: %s\n", *systemPrompt)
+        if *imageFile != "" {
+            fmt.Printf("Debug: Image file: %s\n", *imageFile)
+        }
+    }
+
     var response string
-    var err error
 
     if *imageFile != "" {
-        response, err = aiClient.GenerateWithImage(userPrompt, *systemPrompt, *modelName, *imageFile)
+        fmt.Println("Processing image prompt...")
+        response, err = aiClient.GenerateWithImage(userPrompt, *systemPrompt, selectedModel, *imageFile)
     } else {
-        response, err = aiClient.Generate(userPrompt, *systemPrompt, *modelName)
+        fmt.Println("Processing text prompt...")
+        response, err = aiClient.Generate(userPrompt, *systemPrompt, selectedModel)
     }
 
     if err != nil {
-        fmt.Printf("Error: %v\n", err)
+        fmt.Printf("Error generating response: %v\n", err)
         os.Exit(1)
     }
 
-    fmt.Println(response)
+    if response == "" {
+        fmt.Println("Warning: Received empty response from model")
+    }
+
+    fmt.Printf("\nResponse from %s:\n%s\n", selectedModel, response)
 }
 

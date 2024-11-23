@@ -1,7 +1,7 @@
 package models
 
 const (
-    DefaultTextModel   = "llama2:3.1"
+    DefaultTextModel   = "llama3.1:latest"
     DefaultVisionModel = "llava:13b"
 )
 
@@ -20,6 +20,11 @@ type GenerateResponse struct {
 }
 
 type ListModelsResponse struct {
-    Models []string `json:"models"`
+    Models []ModelInfo `json:"models"`
 }
 
+type ModelInfo struct {
+    Name    string `json:"name"`
+    ModifiedAt string `json:"modified_at,omitempty"`
+    Size    uint64 `json:"size,omitempty"`
+}

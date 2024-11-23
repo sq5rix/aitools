@@ -6,6 +6,7 @@ import (
     "fmt"
     "net/http"
     "os"
+    "io"
 
     "github.com/sq5rix/aitools/internal/ai/models"
 )
@@ -33,11 +34,17 @@ func (c *OllamaClient) Generate(prompt, systemPrompt, model string) (string, err
         return "", fmt.Errorf("error marshaling request: %v", err)
     }
 
+    fmt.Printf("Debug: Sending request to %s/api/generate\n", c.BaseURL)
     resp, err := http.Post(c.BaseURL+"/api/generate", "application/json", bytes.NewBuffer(jsonData))
     if err != nil {
         return "", fmt.Errorf("error making request: %v", err)
     }
     defer resp.Body.Close()
+
+    if resp.StatusCode != http.StatusOK {
+        body, _ := io.ReadAll(resp.Body)
+        return "", fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(body))
+    }
 
     var response models.GenerateResponse
     if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
@@ -92,6 +99,12 @@ func (c *OllamaClient) ListModels() ([]string, error) {
         return nil, fmt.Errorf("error decoding response: %v", err)
     }
 
-    return response.Models, nil
+    // Extract just the model names
+    modelNames := make([]string, len(response.Models))
+    for i, model := range response.Models {
+        modelNames[i] = model.Name
+    }
+
+    return modelNames, nil
 }
 
