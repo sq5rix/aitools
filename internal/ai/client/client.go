@@ -21,6 +21,12 @@ func NewOllamaClient(baseURL string) *OllamaClient {
     }
 }
 
+func New(baseURL string) *OllamaClient {
+    return &OllamaClient{
+        BaseURL: baseURL,
+    }
+}
+
 func (c *OllamaClient) Generate(prompt, systemPrompt, model string) (string, error) {
     requestBody := models.GenerateRequest{
         Model:    model,

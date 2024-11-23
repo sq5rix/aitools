@@ -22,6 +22,28 @@ func main() {
         debug        = flag.Bool("debug", false, "Enable debug output")
     )
     flag.Parse()
+    // Check if we're getting piped input
+    stat, _ := os.Stdin.Stat()
+    isPipe := (stat.Mode() & os.ModeCharDevice) == 0
+    var userPrompt string
+
+
+    if isPipe {
+        // Read from pipe
+        scanner := bufio.NewScanner(os.Stdin)
+        var input []string
+        for scanner.Scan() {
+            input = append(input, scanner.Text())
+        }
+        userPrompt  = strings.Join(input, "\n")
+
+    } else {
+        // Interactive mode
+        fmt.Print("Enter your prompt: ")
+        scanner := bufio.NewScanner(os.Stdin)
+        scanner.Scan()
+        userPrompt   = scanner.Text()
+    }
 
     if *showHelp {
         fmt.Println(help.GetHelp())
@@ -43,14 +65,6 @@ func main() {
         return
     }
 
-    // Read user input from stdin
-    reader := bufio.NewReader(os.Stdin)
-    fmt.Print("Enter your prompt: ")
-    userPrompt, err := reader.ReadString('\n')
-    if err != nil {
-        fmt.Printf("Error reading prompt: %v\n", err)
-        os.Exit(1)
-    }
     userPrompt = strings.TrimSpace(userPrompt)
 
     if userPrompt == "" {
@@ -78,6 +92,7 @@ func main() {
     }
 
     var response string
+    var err error
 
     if *imageFile != "" {
         fmt.Println("Processing image prompt...")
