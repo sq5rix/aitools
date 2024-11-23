@@ -2,13 +2,14 @@ package models
 
 const (
     DefaultTextModel   = "llama3.1:latest"
-    DefaultVisionModel = "llava:13b"
+    DefaultVisionModel = "llama3.2:latest"
 )
 
 type GenerateRequest struct {
     Model    string   `json:"model"`
     Prompt   string   `json:"prompt"`
     System   string   `json:"system,omitempty"`
+    Assist   string   `json:"assistant,omitempty"`
     Stream   bool     `json:"stream"`
     Images   []string `json:"images,omitempty"`
 }

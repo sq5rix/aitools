@@ -27,11 +27,12 @@ func New(baseURL string) *OllamaClient {
     }
 }
 
-func (c *OllamaClient) Generate(prompt, systemPrompt, model string) (string, error) {
+func (c *OllamaClient) Generate(prompt, systemPrompt, assistPrompt, model string) (string, error) {
     requestBody := models.GenerateRequest{
         Model:    model,
         Prompt:   prompt,
         System:   systemPrompt,
+        Assist:   assistPrompt,
         Stream:   false,
     }
 
@@ -60,7 +61,7 @@ func (c *OllamaClient) Generate(prompt, systemPrompt, model string) (string, err
     return response.Response, nil
 }
 
-func (c *OllamaClient) GenerateWithImage(prompt, systemPrompt, model, imagePath string) (string, error) {
+func (c *OllamaClient) GenerateWithImage(prompt, systemPrompt, assistPrompt, model, imagePath string) (string, error) {
     imageData, err := os.ReadFile(imagePath)
     if err != nil {
         return "", fmt.Errorf("error reading image: %v", err)
@@ -70,6 +71,7 @@ func (c *OllamaClient) GenerateWithImage(prompt, systemPrompt, model, imagePath 
         Model:    model,
         Prompt:   prompt,
         System:   systemPrompt,
+        Assist:   assistPrompt,
         Stream:   false,
         Images:   []string{string(imageData)},
     }

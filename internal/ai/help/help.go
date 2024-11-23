@@ -4,6 +4,7 @@ func GetHelp() string {
     return `Usage: ai [options] 
 Options:
     --system <prompt>   Set system prompt
+    --assist <prompt>   Set assistant prompt
     --model <name>      Specify the model to use (default: llama2)
     --image <path>      Path to image file for image-based prompts
     --list             List available models

@@ -15,6 +15,7 @@ import (
 func main() {
     var (
         systemPrompt = flag.String("system", "", "System prompt")
+        assistPrompt = flag.String("assistant", "", "System prompt")
         imageFile    = flag.String("image", "", "Path to image file")
         modelName    = flag.String("model", "", "Model name to use")
         showHelp     = flag.Bool("help", false, "Show help")
@@ -96,10 +97,10 @@ func main() {
 
     if *imageFile != "" {
         fmt.Println("Processing image prompt...")
-        response, err = aiClient.GenerateWithImage(userPrompt, *systemPrompt, selectedModel, *imageFile)
+        response, err = aiClient.GenerateWithImage(userPrompt, *systemPrompt, *assistPrompt, selectedModel, *imageFile)
     } else {
         fmt.Println("Processing text prompt...")
-        response, err = aiClient.Generate(userPrompt, *systemPrompt, selectedModel)
+        response, err = aiClient.Generate(userPrompt, *systemPrompt, *assistPrompt, selectedModel)
     }
 
     if err != nil {
