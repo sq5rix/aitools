@@ -54,29 +54,28 @@ func main() {
         return
     }
 
-    userPrompt := readInitialPrompt(cfg.isPipe)
-
-    userPrompt = strings.TrimSpace(userPrompt)
-    if userPrompt == "" {
-        fmt.Println(help.GetErrorNoPrompt())
-        return
+    var pipedContent string
+    if cfg.isPipe {
+        pipedContent = readInitialPrompt(true)
+        pipedContent = strings.TrimSpace(pipedContent)
+        // Reopen stdin for interactive input
+        f, err := os.Open("/dev/tty")
+        if err != nil {
+            fmt.Printf("Error reopening stdin: %v\n", err)
+            os.Exit(1)
+        }
+        os.Stdin = f
     }
 
     selectedModel := selectModel(cfg)
     if cfg.debug {
-        printDebugInfo(cfg, selectedModel, userPrompt)
+        printDebugInfo(cfg, selectedModel, "")
     }
 
     chatSession := aiClient.NewChatSession(selectedModel, cfg.systemPrompt, cfg.assistPrompt)
     
-    if err := handleInitialPrompt(chatSession, cfg, selectedModel, userPrompt); err != nil {
-        fmt.Printf("Error in chat: %v\n", err)
-        os.Exit(1)
-    }
-
-    if !cfg.isPipe {
-        handleInteractiveChat(chatSession, cfg, selectedModel)
-    }
+    // Always go to interactive mode, with potential piped content
+    handleInteractiveChat(chatSession, cfg, selectedModel, pipedContent)
 }
 
 func readInitialPrompt(isPipe bool) string {
@@ -146,8 +145,13 @@ func handleInitialPrompt(chatSession *client.ChatSession, cfg *config, selectedM
     return nil
 }
 
-func handleInteractiveChat(chatSession *client.ChatSession, cfg *config, selectedModel string) {
+func handleInteractiveChat(chatSession *client.ChatSession, cfg *config, selectedModel, pipedContent string) {
     fmt.Println("\nEnter your messages (type 'exit' to quit):")
+    if cfg.isPipe {
+        fmt.Printf("Piped content: %s\n", pipedContent)
+        fmt.Println("Enter additional input to process with piped content:")
+    }
+
     scanner := bufio.NewScanner(os.Stdin)
     
     for {
@@ -166,11 +170,18 @@ func handleInteractiveChat(chatSession *client.ChatSession, cfg *config, selecte
             continue
         }
 
-        if cfg.debug {
-            fmt.Printf("Debug: Sending message: %s\n", input)
+        // Combine piped content with user input if exists
+        finalInput := input
+        if cfg.isPipe && pipedContent != "" {
+            finalInput = pipedContent + "\n" + input
+            pipedContent = "" // Clear piped content after first use
         }
 
-        response, err := chatSession.Send(input)
+        if cfg.debug {
+            fmt.Printf("Debug: Sending message: %s\n", finalInput)
+        }
+
+        response, err := chatSession.Send(finalInput)
         if err != nil {
             fmt.Printf("Error in chat: %v\n", err)
             continue
